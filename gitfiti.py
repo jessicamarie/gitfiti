@@ -14,20 +14,10 @@ import itertools
 import json
 import math
 import os
-try:
-    # Python 3+
-    from urllib.error import HTTPError, URLError
-    from urllib.request import urlopen
-except ImportError:
-    # Python 2
-    from urllib2 import HTTPError, URLError, urlopen
+# Python 3+
+from urllib.error import HTTPError, URLError
+from urllib.request import urlopen
 
-try:
-    # Python 2
-    raw_input
-except NameError:
-    # Python 3 (Python 2's `raw_input` was renamed to `input`)
-    raw_input = input
 
 
 GITHUB_BASE_URL = 'https://github.com/'
@@ -43,6 +33,7 @@ TITLE = '''
 /____/
 '''
 
+HELL = [[0, 0], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 0]]
 
 KITTY = [
   [0,0,0,4,0,0,0,0,4,0,0,0],
@@ -152,7 +143,6 @@ ASCII_TO_NUMBER = {
   '*': 4,
 }
 
-
 def str_to_sprite(content):
     # Break out lines and filter any excess
     lines = content.split('\n')
@@ -184,6 +174,7 @@ ONEUP_STR = str_to_sprite('''
 
 
 IMAGES = {
+  'hell' : HELL,
   'kitty': KITTY,
   'oneup': ONEUP,
   'oneup2': ONEUP2,
@@ -196,6 +187,14 @@ IMAGES = {
   'beer': BEER,
   'gliders': GLIDERS,
 }
+
+
+def read_file():
+    lines = []
+    with open("myfile.txt") as my_file:
+        for line in my_file:
+            lines.append(line.rstrip('\n'))
+    return lines
 
 
 def load_images(img_names):
@@ -304,11 +303,8 @@ def generate_values_in_date_order(image, multiplier=1):
 
 
 def commit(commitdate):
-    template = (
-        '''GIT_AUTHOR_DATE={0} GIT_COMMITTER_DATE={1} '''
-        '''git commit --allow-empty -m "gitfiti" > /dev/null\n'''
-    )
-    return template.format(commitdate.isoformat(), commitdate.isoformat())
+    #template = f"GIT_AUTHOR_DATE={commitdate} GIT_COMMITTER_DATE={commitdate} git commit --allow-empty -m {lines.pop()} > /dev/null\n"
+    return "template"
 
 
 def fake_it(image, start_date, username, repo, git_url, offset=0, multiplier=1):
@@ -319,8 +315,6 @@ def fake_it(image, start_date, username, repo, git_url, offset=0, multiplier=1):
         'cd $REPO\n'
         'touch README.md\n'
         'git add README.md\n'
-        'touch gitfiti\n'
-        'git add gitfiti\n'
         '{1}\n'
         'git remote add origin {2}:{3}/$REPO.git\n'
         'git pull origin master\n'
@@ -328,12 +322,14 @@ def fake_it(image, start_date, username, repo, git_url, offset=0, multiplier=1):
     )
 
     strings = []
+    lines = read_file()
     for value, date in zip(generate_values_in_date_order(image, multiplier),
             generate_next_dates(start_date, offset)):
         for _ in range(value):
-            strings.append(commit(date))
+            msg = f"GIT_AUTHOR_DATE={date.isoformat()} GIT_COMMITTER_DATE={date.isoformat()} git commit --allow-empty -m '{lines.pop(0)}' > /dev/null\n"
+            strings.append(msg)
 
-    return template.format(repo, ''.join(strings), git_url, username)
+    return template.format(repo, "".join(strings), git_url, username)
 
 
 def save(output, filename):
@@ -345,7 +341,7 @@ def save(output, filename):
 
 def request_user_input(prompt='> '):
     """Request input from the user and return what has been entered."""
-    return raw_input(prompt)
+    return input(prompt)
 
 
 def main():
@@ -407,7 +403,7 @@ def main():
             image = IMAGES[image_name_fallback]
 
     start_date = get_start_date()
-    fake_it_multiplier = m * match
+    fake_it_multiplier = 1
 
     if not ghe:
         git_url = 'git@github.com'
